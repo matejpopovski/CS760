@@ -46,7 +46,7 @@ def plot_decision_boundary(clf, X, y, title, outpath, padding=0.02, grid_step=40
         np.linspace(y_min, y_max, grid_step),
     )
     grid = np.c_[xx.ravel(), yy.ravel()]
-    Z = clf.predict(grid).reshape(xx.shape)
+    Z = np.array(clf.predict(grid)).reshape(xx.shape)
 
     # plot
     plt.figure(figsize=(7,5.2), dpi=140)
