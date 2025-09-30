@@ -15,7 +15,7 @@ implemented from scratch to match the assignment rules:
 - Leaf prediction = majority class in that node (ties predict 1).
 - The "Yes" branch is the THEN branch (condition true), "No" is the ELSE branch.
 
-Usage:
+CLI:
     python tree.py <datafile.txt>
 
 Data format (plaintext), one item per line:
@@ -49,7 +49,7 @@ def read_txt(path: str) -> Tuple[List[List[float]], List[int]]:
 
 # -------------------- Math utils --------------------
 
-def entropy(labels: List[int]) -> float:
+def _entropy(labels: List[int]) -> float:
     n = len(labels)
     if n == 0:
         return 0.0
@@ -62,7 +62,7 @@ def entropy(labels: List[int]) -> float:
         e -= p0 * math.log(p0, 2)
     return e
 
-def split_info(n_left: int, n_right: int, n_total: int) -> float:
+def _split_info(n_left: int, n_right: int, n_total: int) -> float:
     """Split information (intrinsic value) for gain ratio."""
     if n_total == 0:
         return 0.0
@@ -74,17 +74,17 @@ def split_info(n_left: int, n_right: int, n_total: int) -> float:
         si -= p * math.log(p, 2)
     return si
 
-# -------------------- Tree structures --------------------
+# -------------------- Tree node --------------------
 
-class Node:
+class _Node:
     def __init__(
         self,
         is_leaf: bool,
         pred: Optional[int] = None,
         feat: Optional[int] = None,
         thr: Optional[float] = None,
-        left: Optional["Node"] = None,
-        right: Optional["Node"] = None,
+        left: Optional["_Node"] = None,
+        right: Optional["_Node"] = None,
         n: Optional[int] = None,
         n_pos: Optional[int] = None,
         H: Optional[float] = None,
@@ -99,133 +99,163 @@ class Node:
         self.n_pos = n_pos   # number of positives at node
         self.H = H           # entropy at node
 
-# -------------------- Core algorithm --------------------
+# -------------------- DecisionTree class --------------------
 
-def majority_label(labels: List[int]) -> int:
-    ones = sum(labels)
-    zeros = len(labels) - ones
-    if ones > zeros:
-        return 1
-    if zeros > ones:
-        return 0
-    return 1  # tie -> predict 1
+class DecisionTree:
+    """
+    Minimal API:
+      - fit(X, y)
+      - predict(X) -> list[int]
+      - score(X, y) -> float accuracy
+      - export_text() -> string (pretty tree)
+      - num_nodes_  (total nodes)
+      - num_leaves_
+      - num_internals_
+      - depth_
+    """
+    def __init__(self):
+        self.root_: Optional[_Node] = None
+        self.num_leaves_ = 0
+        self.num_internals_ = 0
+        self.num_nodes_ = 0
+        self.depth_ = 0
 
-def split_indices(X: List[List[float]], idxs: List[int], j: int, c: float) -> Tuple[List[int], List[int]]:
-    """Return (left, right) where left = indices with x_j >= c (Yes), right = otherwise (No)."""
-    left, right = [], []
-    for i in idxs:
-        if X[i][j] >= c:
-            left.append(i)
-        else:
-            right.append(i)
-    return left, right
+    # ---------- helpers ----------
+    @staticmethod
+    def _majority_label(labels: List[int]) -> int:
+        ones = sum(labels)
+        zeros = len(labels) - ones
+        if ones > zeros:
+            return 1
+        if zeros > ones:
+            return 0
+        return 1  # tie -> predict 1
 
-def build_tree(
-    X: List[List[float]], y: List[int], idxs: List[int]
-) -> Node:
-    """Recursively build the decision tree according to assignment rules."""
-    # Empty node -> leaf predicting 1 (tie/empty rule)
-    if not idxs:
-        return Node(is_leaf=True, pred=1, n=0, n_pos=0, H=0.0)
+    @staticmethod
+    def _split_indices(X: List[List[float]], idxs: List[int], j: int, c: float) -> Tuple[List[int], List[int]]:
+        """Return (left, right) where left = indices with x_j >= c (Yes), right = otherwise (No)."""
+        left, right = [], []
+        for i in idxs:
+            if X[i][j] >= c:
+                left.append(i)
+            else:
+                right.append(i)
+        return left, right
 
-    labels = [y[i] for i in idxs]
-    n_total = len(labels)
-    pos = sum(labels)
-    H_parent = entropy(labels)
+    def _build(self, X: List[List[float]], y: List[int], idxs: List[int]) -> _Node:
+        """Recursively build the decision tree according to assignment rules."""
+        # Empty node -> leaf predicting 1 (tie/empty rule)
+        if not idxs:
+            return _Node(is_leaf=True, pred=1, n=0, n_pos=0, H=0.0)
 
-    # Pure -> leaf
-    if H_parent == 0.0:
-        return Node(is_leaf=True, pred=labels[0], n=n_total, n_pos=pos, H=H_parent)
+        labels = [y[i] for i in idxs]
+        n_total = len(labels)
+        pos = sum(labels)
+        H_parent = _entropy(labels)
 
-    # Enumerate candidate splits
-    best = None  # tuple: (GR, IG, j, c, left, right)
-    for j in (0, 1):
-        values = sorted({X[i][j] for i in idxs})
-        for c in values:
-            left, right = split_indices(X, idxs, j, c)
-            nL, nR = len(left), len(right)
-            # defensively skip degenerate splits (all to one side)
-            if nL == 0 or nR == 0:
-                continue
+        # Pure -> leaf
+        if H_parent == 0.0:
+            return _Node(is_leaf=True, pred=labels[0], n=n_total, n_pos=pos, H=H_parent)
 
-            # Split info
-            SI = split_info(nL, nR, n_total)
-            if SI == 0.0:
-                continue  # skip per spec
+        # Enumerate candidate splits
+        best = None  # tuple: (key, GR, IG, j, c, left, right)
+        for j in (0, 1):
+            values = sorted({X[i][j] for i in idxs})
+            for c in values:
+                left, right = self._split_indices(X, idxs, j, c)
+                nL, nR = len(left), len(right)
+                if nL == 0 or nR == 0:
+                    continue  # degenerate
 
-            # Entropies
-            H_left = entropy([y[i] for i in left])
-            H_right = entropy([y[i] for i in right])
-            H_split = (nL / n_total) * H_left + (nR / n_total) * H_right
+                SI = _split_info(nL, nR, n_total)
+                if SI == 0.0:
+                    continue  # skip per spec
 
-            IG = H_parent - H_split
-            if IG <= 0.0:
-                # No information gain -> GR won't be positive; skip
-                continue
+                H_left = _entropy([y[i] for i in left])
+                H_right = _entropy([y[i] for i in right])
+                H_split = (nL / n_total) * H_left + (nR / n_total) * H_right
 
-            GR = IG / SI
+                IG = H_parent - H_split
+                if IG <= 0.0:
+                    continue
 
-            # Keep the best by GR, tie-break by IG (higher), then feature index (smaller), then threshold (smaller)
-            key = (GR, IG, -j, -c)  # invert j/c sign in key to prefer smaller j, c
-            if best is None or key > best[0]:
-                best = (key, GR, IG, j, c, left, right)
+                GR = IG / SI
 
-    # No valid improving split -> make leaf
-    if best is None:
-        return Node(is_leaf=True, pred=majority_label(labels), n=n_total, n_pos=pos, H=H_parent)
+                # Prefer larger GR; tie-break by larger IG, then smaller feature index, then smaller threshold.
+                key = (GR, IG, -j, -c)
+                if best is None or key > best[0]:
+                    best = (key, GR, IG, j, c, left, right)
 
-    # Unpack best split and recurse
-    _, GR, IG, j, c, left, right = best
-    left_node = build_tree(X, y, left)
-    right_node = build_tree(X, y, right)
-    return Node(is_leaf=False, pred=None, feat=j, thr=c, left=left_node, right=right_node, n=n_total, n_pos=pos, H=H_parent)
+        # No valid improving split -> make leaf
+        if best is None:
+            return _Node(is_leaf=True, pred=self._majority_label(labels), n=n_total, n_pos=pos, H=H_parent)
 
-# -------------------- Utilities: predict, stats, pretty print --------------------
+        # Unpack best split and recurse
+        _, GR, IG, j, c, left, right = best
+        left_node = self._build(X, y, left)
+        right_node = self._build(X, y, right)
+        return _Node(is_leaf=False, pred=None, feat=j, thr=c, left=left_node, right=right_node, n=n_total, n_pos=pos, H=H_parent)
 
-def predict_one(node: Node, x: List[float]) -> int:
-    cur = node
-    while not cur.is_leaf:
-        if x[cur.feat] >= cur.thr:
-            cur = cur.left
-        else:
-            cur = cur.right
-    return cur.pred
+    # ---------- public API ----------
+    def fit(self, X: List[List[float]], y: List[int]) -> "DecisionTree":
+        idxs = list(range(len(X)))
+        self.root_ = self._build(X, y, idxs)
+        # stats
+        leaves, internals = self._count_nodes(self.root_)
+        self.num_leaves_ = leaves
+        self.num_internals_ = internals
+        self.num_nodes_ = leaves + internals
+        self.depth_ = self._max_depth(self.root_)
+        return self
 
-def predict_all(node: Node, X: List[List[float]]) -> List[int]:
-    return [predict_one(node, xi) for xi in X]
+    def _predict_one(self, x: List[float]) -> int:
+        node = self.root_
+        assert node is not None
+        cur = node
+        while not cur.is_leaf:
+            if x[cur.feat] >= cur.thr:
+                cur = cur.left
+            else:
+                cur = cur.right
+        return cur.pred
 
-def accuracy(node: Node, X: List[List[float]], y: List[int]) -> float:
-    yh = predict_all(node, X)
-    return sum(int(a == b) for a, b in zip(yh, y)) / len(y)
+    def predict(self, X: List[List[float]]) -> List[int]:
+        return [self._predict_one(x) for x in X]
 
-def count_nodes(node: Node) -> Tuple[int, int]:
-    """Return (num_leaves, num_internal)."""
-    if node.is_leaf:
-        return (1, 0)
-    lL, lI = count_nodes(node.left)
-    rL, rI = count_nodes(node.right)
-    return (lL + rL, lI + rI + 1)
+    def score(self, X: List[List[float]], y: List[int]) -> float:
+        yh = self.predict(X)
+        return sum(int(a == b) for a, b in zip(yh, y)) / len(y)
 
-def max_depth(node: Node) -> int:
-    if node.is_leaf:
-        return 1
-    return 1 + max(max_depth(node.left), max_depth(node.right))
+    # ---------- stats & printing ----------
+    def _count_nodes(self, node: _Node) -> Tuple[int, int]:
+        """Return (num_leaves, num_internal)."""
+        if node.is_leaf:
+            return (1, 0)
+        lL, lI = self._count_nodes(node.left)
+        rL, rI = self._count_nodes(node.right)
+        return (lL + rL, lI + rI + 1)
 
-def print_tree(node: Node, prefix: str = "Root: "):
-    if node.is_leaf:
-        # Show purity info to sanity-check leaves
-        if node.n is not None and node.n_pos is not None:
-            print(f"{prefix}y = {node.pred}  [n={node.n}, pos={node.n_pos}]")
-        else:
-            print(f"{prefix}y = {node.pred}")
-        return
-    feat_name = f"x{node.feat + 1}"
-    # Keep full precision threshold (matches your earlier output style)
-    print(f"{prefix}{feat_name} >= {node.thr}?")
-    print_tree(node.left, prefix="  Yes: ")
-    print_tree(node.right, prefix="  No:  ")
+    def _max_depth(self, node: _Node) -> int:
+        if node.is_leaf:
+            return 1
+        return 1 + max(self._max_depth(node.left), self._max_depth(node.right))
 
-# -------------------- Main --------------------
+    def _export_lines(self, node: _Node, prefix: str = "Root: ") -> List[str]:
+        if node.is_leaf:
+            if node.n is not None and node.n_pos is not None:
+                return [f"{prefix}y = {node.pred}  [n={node.n}, pos={node.n_pos}]"]
+            return [f"{prefix}y = {node.pred}"]
+        feat_name = f"x{node.feat + 1}"
+        lines = [f"{prefix}{feat_name} >= {node.thr}?"]
+        lines += self._export_lines(node.left, prefix="  Yes: ")
+        lines += self._export_lines(node.right, prefix="  No:  ")
+        return lines
+
+    def export_text(self) -> str:
+        assert self.root_ is not None
+        return "\n".join(self._export_lines(self.root_))
+
+# -------------------- CLI --------------------
 
 def main():
     if len(sys.argv) != 2:
@@ -234,16 +264,16 @@ def main():
 
     data_path = sys.argv[1]
     X, y = read_txt(data_path)
-    idxs = list(range(len(X)))
 
-    tree = build_tree(X, y, idxs)
-    print_tree(tree)
+    clf = DecisionTree().fit(X, y)
+    print(clf.export_text())
 
-    # Useful stats for sanity
-    acc = accuracy(tree, X, y)
-    leaves, internals = count_nodes(tree)
-    depth = max_depth(tree)
-    print(f"\n[STATS] accuracy={acc:.4f}, leaves={leaves}, internals={internals}, depth={depth}, n={len(X)}")
+    acc = clf.score(X, y)
+    print(
+        f"\n[STATS] accuracy={acc:.4f}, "
+        f"leaves={clf.num_leaves_}, internals={clf.num_internals_}, "
+        f"depth={clf.depth_}, n={len(X)}"
+    )
 
 if __name__ == "__main__":
     main()
