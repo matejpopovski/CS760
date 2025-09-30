@@ -1,0 +1,393 @@
+\documentclass[a4paper]{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{epstopdf}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{paralist}
+\usepackage[svgname]{xcolor}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{comment}
+\usepackage{environ}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{caption}
+\usepackage{color}
+\usepackage{xcolor}
+
+
+
+\urlstyle{rm}
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[]
+\newtheorem{conjecture}{Conjecture}[]
+\newtheorem{example}{Example}[]
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\abs}[1]{\lvert#1\rvert}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\br}[1]{\{#1\}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+
+\newcommand{\vc}[1]{\boldsymbol{#1}}
+\newcommand{\xv}{\vc{x}}
+\newcommand{\Sigmav}{\vc{\Sigma}}
+\newcommand{\alphav}{\vc{\alpha}}
+\newcommand{\muv}{\vc{\mu}}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+
+\def\x{\mathbf x}
+\def\y{\mathbf y}
+\def\w{\mathbf w}
+\def\v{\mathbf v}
+\def\E{\mathbb E}
+\def\V{\mathbb V}
+
+% TO SHOW SOLUTIONS, include following (else comment out):
+\newenvironment{soln}{
+    \leavevmode\color{blue}\ignorespaces
+}{}
+
+\newcommand \mle [1]{{\hat #1}^{\rm MLE}}
+
+
+
+\hypersetup{
+%    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\geometry{
+  top=1in,            % <-- you want to adjust this
+  inner=1in,
+  outer=1in,
+  bottom=1in,
+  headheight=3em,       % <-- and this
+  headsep=2em,          % <-- and this
+  footskip=3em,
+}
+
+
+\pagestyle{fancyplain}
+\lhead{\fancyplain{}{Homework 1}}
+\rhead{\fancyplain{}{CS 760 Machine Learning}}
+\cfoot{\thepage}
+
+\title{\textsc{Homework 1}} % Title
+
+%%% NOTE:  Replace 'NAME HERE' etc., and delete any "\red{}" wrappers (so it won't show up as red)
+
+\author{
+\red{$>>$NAME HERE$<<$} \\
+\red{$>>$ID HERE$<<$}\\
+} 
+
+\date{}
+
+\begin{document}
+
+\maketitle 
+
+
+\textbf{Instructions:} 
+
+Use this LaTeX file as a template to develop your homework and submit it as a single PDF file on Gradescope. 
+For the programming component, you can use any programming language, but all learning algorithms need to be implemented from scratch (i.e. no {\tt scikit-learn}).
+Put all code used for the assignment at the end of the document in whatever way is easiest but still legible.
+
+\section{A Simple Decision Tree}
+Implement a simple decision-tree learner for classification that works for data of the following type:
+\begin{itemize}
+\item each item has two continuous features $\x \in \RR^2$
+\item the class label is binary and encoded as $y \in \{0,1\}$
+\item data files are in plaintext with one labeled item per line, separated by whitespace:
+$$x_{11} \quad x_{12} \quad y_1$$
+$$...$$
+$$x_{n1} \quad x_{n2} \quad y_n$$
+\end{itemize}
+
+Your program should implement a decision tree learner according to the following guidelines:
+\begin{itemize}
+\item Candidate splits $(j,c)$ for numeric features should use a threshold $c$ in feature dimension $j$ in the form of $x_{\cdot j}\ge c$.
+\item $c$ should be on values of that dimension present in the training data; i.e. the threshold is on training points, not in between training points. You may enumerate all features, and for each feature, use all possible values for that dimension.
+\item You may skip those candidate splits with zero split information (i.e. the entropy of the split), and continue the enumeration.
+\item The left branch of such a split is the ``then'' branch, and the right branch is ``else''.
+\item Splits should be chosen using information gain ratio. If there is a tie you may break it arbitrarily.
+\item The stopping criteria (for making a node into a leaf) are that 
+	\begin{itemize}
+	\item the node is empty, or
+	\item all splits have zero gain ratio (if the entropy of the split is non-zero), or
+	\item the entropy of any candidates split is zero
+	\end{itemize}
+\item To simplify, whenever there is no majority class in a leaf, let it predict $y=1$.
+\end{itemize}
+
+\subsection{Stopping at pure labels [10 points]}
+If a node is not empty but contains training items with the same label, why is it guaranteed to become a leaf?  Explain. You may assume that the feature values of these items are not all the same.\\
+{\color{blue} Your answer here.}
+
+\subsection{Greediness [5 points]}
+Handcraft a small training set where both classes are present but the algorithm refuses to split; instead it makes the root a leaf and stop;
+Importantly, if we were to manually force a split, the algorithm will happily continue splitting the data set further and produce a deeper tree with zero training error.
+You should (1) plot your training set, (2) explain why.  Hint: you don't need more than a handful of items.\\
+{\color{blue} Your answer here.}
+
+\subsection{Information gain [5 points]}
+Use the training set {\tt Druns.txt}.  For the root node, list all candidate cuts and their information gain ratio. If the entropy of the candidate split is zero, please list its mutual information (i.e. information gain). Hint: to get $\log_2(x)$ when your programming language may be using a different base, use \verb|log(x)/log(2)|. Also, please follow the split rule in the first section.
+
+{\color{blue} Your answer here.}
+
+\subsection{The king of interpretability [5 points]}
+Decision tree is not the most accurate classifier in general.  However, it persists.  This is largely due to its rumored interpretability: a data scientist can easily explain a tree to a non-data scientist.  Build a tree from {\tt D3leaves.txt}.  Then manually convert your tree to a set of logic rules.  Show the tree\footnote{When we say ``show the true'' you can either use the standard CS tree view or some crude plaintext representation of the tree -- as long as you explain the format.  When we say ``visualize the tree'' we mean a plot in the 2D $\x$ space that shows how the tree will classify any points.} and the rules.
+
+{\color{blue} Your answer here.}
+
+\subsection{Or is it? [10 points]}\label{orisit}
+For this question only, make sure you DO NOT VISUALIZE the data sets or plot your tree's decision boundary in the 2D $\x$ space.  If your code does that, turn it off before proceeding.  This is because you want to see your own reaction when trying to interpret a tree.  You will get points no matter what your interpretation is.
+And we will ask you to visualize them in the next question anyway.
+
+\begin{enumerate}
+  \item Build and show a decision tree on {\tt D1.txt}. Again, do not visualize the data set or the tree in the $\x$ input space.  In real tasks you will not be able to visualize the whole high dimensional input space anyway, so we don't want you to ``cheat'' here.
+  {\color{blue} Your answer here.}
+  \item Look at your tree in the above format (remember, you should not visualize the 2D dataset or your tree's decision boundary) and try to interpret the decision boundary in human understandable English.\\{\color{blue} Your answer here.}
+  \item Build a decision tree on {\tt D2.txt}.  Show it to us.\\{\color{blue} Your answer here.}
+  \item Try to interpret the decision tree trained on {\tt D2.txt}. Is it easy or possible to do so without visualization?\\{\color{blue} Your answer here.}
+\end{enumerate}
+
+\subsection{Hypothesis space visualization [5 points]}\label{hypothesis}
+For {\tt D1.txt} and {\tt D2.txt}, do the following separately:
+  \begin{enumerate}
+  \item Produce a scatter plot of the data set.
+  \item Visualize your decision tree's decision boundary (or decision region, or some other ways to clearly visualize how your decision tree will make decisions in the feature space).
+  \end{enumerate}
+Then discuss why the size of your decision trees on {\tt D1.txt} and {\tt D2.txt} differ.  Relate this to the hypothesis space of our decision tree algorithm.\\{\color{blue} Your answer here.}
+
+\subsection{Learning curve [10 points]}\label{curve}
+We provide a data set {\tt Dbig.txt} with 10000 labeled items. Caution: {\tt Dbig.txt} is sorted.
+Randomly split {\tt Dbig.txt} into a candidate training set of 8192 items and a test set (the rest).  Do this by generating a random permutation and splitting at 8192.
+Then, generate a sequence of five nested training sets $D_{32} \subset D_{128} \subset D_{512} \subset D_{2048} \subset D_{8192}$ from the candidate training set. 
+Here the subscript $n$ in $D_n$ denotes training set size. 
+The easiest way is to take the first $n$ items from the (same) permutation from before.
+This sequence simulates the real world situation where you obtain more and more training data.
+Finally, for each $D_n$, train a decision tree, measure its test set error $err_n$, and show three things in your answer: 
+\begin{enumerate}
+	\item A three-column table with a column showing $n$, a column showing the number of nodes in the $n$th tree, and a column showing $err_n$
+	\item Plot $n$ vs. $err_n$. This is known as a learning curve (a single plot).
+	\item Visualize your decision trees' decision boundary (five plots).
+\end{enumerate}
+{\color{blue} Your answer here.}
+
+\newpage
+\section{Maximum Likelihood Estimation}
+
+
+This problem explores maximum likelihood estimation (MLE), which is a technique for estimating an unknown parameter of a probability distribution based on observed samples. 
+Suppose we observe the values of $n$ iid \footnote{independent \& identically distributed.} random variables $X_1$, \dots, $X_n$ drawn from a single Bernoulli distribution with parameter $\theta$. 
+In other words, for each $X_i$, we know that 
+\[
+P(X_i = 1) = \theta\quad\text{and}\quad P(X_i = 0) = 1 - \theta.
+\]
+Our goal is to estimate the value of $\theta$ from these observed values of $X_1$ through $X_n$.
+
+
+For any hypothetical value $\hat \theta$, we can compute the probability of observing the outcome $X_1$, \dots, $X_n$ if the true parameter value $\theta$ were equal to $\hat \theta$.
+This probability of the observed data is often called the {\em data likelihood}, and the function $L(\hat \theta)=P(X_1, \dots, X_n|\hat{\theta})$ that maps each $\hat \theta$ to the corresponding likelihood is called the \emph{likelihood function}.  
+A natural way to estimate the unknown parameter $\theta$ is to choose the $\hat \theta$ that maximizes the likelihood function. 
+Formally,
+\[
+\mle{\theta} = \argmax_{\hat \theta} L(\hat \theta).
+\]
+Often it is more convenient to work with the log likelihood function $\ell(\hat \theta) = \log L(\hat \theta)$. 
+Since the $\log$ function is increasing, we also have
+\[
+\mle{\theta} = \argmax_{\hat \theta} \ell(\hat \theta).
+\]
+
+
+\subsection{Bernoulli likelihood [5 points]}
+	Write a formula for the log likelihood function, $\ell(\hat \theta)$.  
+	Your function should depend on $N_1 = \#\{X_i= 1\}$ and $N_0 = \#\{X_i = 0\}$ and the hypothetical parameter $\hat \theta$, and should be simplified as far as possible (i.e. don't just write the definition of the log likelihood function). 
+	
+	{\color{blue} Your answer here.}
+	
+	
+\subsection{Bernoulli example [5 points]}
+	Consider the following sequence of 10 samples:
+	\[
+	X = (0 , 1, 0, 1, 1, 0, 0, 1, 1, 1).
+	\]
+	Compute the maximum likelihood estimate for the 10 samples. 
+	Show all of your work (hint: recall that if $x^*$ maximizes $f(x)$, then $f'(x^*) = 0$). 
+	
+	{\color{blue} Your answer here.}
+	
+	
+\subsection{Binomial likelihood [5 points]}
+	Now we will consider a related distribution. 
+	Suppose we observe the values of $m$ iid random variables $Y_1,\dots,Y_m$ drawn from a single Binomial distribution $B(n,\theta)$. 
+	A Binomial distribution models the number of $1$'s from a sequence of $n$ independent Bernoulli variables with parameter $\theta$. 
+	In other words,
+	\[
+	P(Y_i = k) = {n \choose k}\theta^k (1-\theta)^{n-k} = \frac{n!}{k!(n-k)!}\cdot\theta^k (1-\theta)^{n-k}.
+	\]
+	Write a formula for the log likelihood function, $\ell(\hat \theta)$.  
+	Your function should depend on $S=\sum_{i=1}^mY_i$ and $T=\sum_{i=1}^m\log\binom{n}{Y_i}$ and the hypothetical parameter $\hat \theta$.
+	
+	{\color{blue} Your answer here.}
+	
+	
+\subsection{Binomial example [5 points]}
+	Consider two Binomial random variables $Y_1$ and $Y_2$ with the same parameters, $n=5$ and $\theta$.
+	The Bernoulli variables for $Y_1$ and $Y_2$ resulted in $(0,1,0,1,1)$ and $(0,0,1,1,1)$, respectively. 
+	Therefore, $Y_1=3$ and $Y_2=3$. 
+	Compute the maximum likelihood estimate for the 2 samples. 
+	Show your work.
+	
+	{\color{blue} Your answer here.}
+	
+	
+\subsection{Comparison [5 points]}
+	How do your answers for parts 1 and 3 compare? 
+	What about parts 2 and 4? 
+	If you got the same or different answers, why was that the case?
+	
+	{\color{blue} Your answer here.}
+
+
+\newpage
+\section{Logistic regression}
+In this question, we will study the logistic regression algorithm.
+
+\subsection{Conditional likelihood [10 points]}
+
+For simplicity, we assume the dataset is two-dimensional.
+Given a training set $\{(x^i, y^i), i = 1, \ldots, n \}$ where $x^i \in \mathbb{R}^{2}$ is a feature vector and $y^i \in \{0, 1\}$ is a binary label, we want to find the parameters $\hat{w}$ that maximize the likelihood for the training set, assuming a parametric model of the form
+\begin{equation}
+	p(y = 1 | x; w) = \frac{1}{1 + \exp(-w_0 - w_1 x_1 - w_2 x_2)}
+	=\frac{\exp(w_0 + w_1 x_1 + w_2 x_2)}{1+\exp(w_0 + w_1 x_1 + w_2 x_2)}. \label{eq:def}
+\end{equation}
+
+Below, we give a derivation of the conditional log likelihood.
+In this derivation, \textbf{provide a short justification for why each line follows from the previous one}.
+	
+	\begin{align}
+		\ell(w)&\equiv\ln\prod_{j=1}^n p(y^j\mid x^j,w)\\
+		&=\sum_{j=1}^n \ln p(y^j\mid x^j,w) {\color{blue} \text{your answer here}}\\ \label{eq:prob-y}
+		&=\sum_{j=1}^n \ln \left(p(y^j=1\mid x^j,w)^{y^j}p(y^j=0\mid x^j,w)^{1-y^j}\right)\\ \label{eq:prob-power}
+		&\quad\quad {\color{blue}\text{your answer here}}\nonumber \\ 
+		&=\sum_{j=1}^n \left[y^j\ln p(y^j=1\mid x^j,w)+(1-y^j)\ln p(y^j=0\mid x^j,w)\right]\\
+		&\quad\quad {\color{blue}\text{your answer here}}\nonumber \\
+		&=\sum_{j=1}^n \left[y^j\ln \frac{\exp(w_0 + w_1 x_1^j + w_2 x_2^j)}{1+\exp(w_0 + w_1 x_1^j + w_2 x_2^j)}
+		+(1-y^j) \ln\frac{1}{1+\exp(w_0 + w_1 x_1^j + w_2 x_2^j)}\right] \\ \label{eq:last}
+		&\quad\quad{\color{blue} \text{your answer here}}\nonumber \\
+		&=\sum_{j=1}^n \left[y^j \ln\left( \exp(w_0 + w_1 x_1^j + w_2 x_2^j)\right)
+		+\ln\left(\frac{1}{1+\exp(w_0 + w_1 x_1^j + w_2 x_2^j)}\right)\right] \\
+		&\quad\quad{\color{blue}\text{your answer here}}\nonumber \\
+		%&=\sum_{j=1}^ny^j\ln \left(\exp(w_0 + w_1 x_1 + w_2 x_2)\right)-\ln\left(1+\exp(w_0 + w_1 x_1 + w_2 x_2)\right) \\
+		&=\sum_{j=1}^n\left[y^j\left( w_0+w_1 x_1^j+w_2 x_2^j\right)
+		-\ln\left( 1+\exp(w_0 + w_1 x_1^j + w_2 x_2^j)\right)\right]. \label{eq:likelihood}\\
+		&\quad\quad{\color{blue}\text{your answer here}}\nonumber    
+	\end{align}
+	
+	
+\subsection{Deriving the gradient [10 points]}
+
+	Next, we will derive the gradient of the previous expression with respect to
+	$w_0$, $w_1$, $w_2$, i.e., $\frac{\partial \ell(w)}{\partial w_i}$, where $\ell(w)$ denotes the log likelihood from part 1. 
+	We will perform a few steps of the derivation, and then ask you to do one step at the end.
+	If we take the derivative of Expression \ref{eq:likelihood} with respect to
+	$w_i$ for $i\in \{1,2\}$, we get the following expression:
+	
+	\begin{align} \label{eq:blue}
+		\frac{\partial \ell(w)}{\partial w_i}={\color{blue} \frac{\partial }{\partial w_i} \sum_{j=1}^n\left[y^j\left(w_0+w_1 x_1^j+w_2 x_2^j\right)\right] }
+		-{\color{red} \frac{\partial }{\partial w_i}\sum_{j=1}^n\ln\left[ 1+\text{exp}\left( w_0+w_1 x_1^j+w_2 x_2^j\right)\right] } .
+	\end{align}
+	
+	
+	The blue expression is linear in $w_i$, so it can be simplified to $\sum_{j=1}^n y^j x_i^j$.
+	For the red expression, we use the chain rule as follows (first we consider a single $j\in [1,n]$)
+	
+	
+	\begin{align}
+		&~\frac{\partial}{\partial w_i} \ln\left[ 1+\text{exp}\left( w_0+w_1 x_1^j+w_2 x_2^j\right)\right]\\
+		=~& \frac{1}{1+\text{exp}\left(w_0+w_1 x_1^j+w_2 x_2^j \right)}
+		\cdot \frac{\partial }{\partial w_i}\left(1+\text{exp}\left(w_0+w_1 x_1^j+w_2 x_2^j \right)\right)\\
+		=~& \frac{1}{1+\text{exp}\left(w_0+w_1 x_1^j+w_2 x_2^j \right)}
+		\cdot \text{exp}\left(w_0+w_1 x_1^j+w_2 x_2^j \right)
+		\frac{\partial}{\partial w_i}\left(w_0+w_1 x_1^j+w_2 x_2^j \right)\\
+		=~&x_i^j \cdot \frac{\text{exp}\left(w_0+w_1 x_1^j+w_2 x_2^j\right)}
+		{1+\text{exp}\left(w_0+w_1 x_1^j+w_2 x_2^j \right) } \label{eq:familiar}
+	\end{align}
+	
+	Now use Equation \ref{eq:familiar} (and the previous discussion) to show that overall,
+	Expression \ref{eq:blue}, i.e., $\frac{\partial \ell(w)}{\partial w_i}$, is equal to
+	\begin{align} \label{eq:mcle1}
+		\frac{\partial \ell(w)}{\partial w_i} =\sum_{j = 1}^{n} x_i^j(y^j - p(y^j=1 \mid x^j; w)) 
+	\end{align}
+	
+	
+	Hint: does Expression \ref{eq:familiar} look like a familiar probability? 
+	
+	
+	
+	
+	{\color{blue} Your answer here.}
+
+
+
+Since the log likelihood is concave, it is easy to optimize using gradient ascent.
+The final algorithm is as follows. We pick a step size $\eta$,
+and then perform the following iterations until the change is $<\epsilon$:
+\begin{align}
+	w_0^{(t+1)}&=w_0^{(t)}+\eta\sum_j\left[y^j-p(y^j=1\mid x^j;w^{(t)})\right] \\
+	w_i^{(t+1)}&=w_i^{(t)}+\eta\sum_j x_i^j\left[y^j-p(y^j=1\mid x^j;w^{(t)})\right]. 
+\end{align}
+
+\subsection{The decision boundary [5 points]}
+
+	Recall the prediction rule for logistic regression is if 
+	$p(y^j=1\mid x^j)>p(y^j=0\mid x^j)$, then predict 1, otherwise predict 0.
+	Prove that this is a linear decision boundary using only the prediction rule and the parametric form of the probability.
+	
+	{\color{blue} Your answer here.}
+
+\end{document}
