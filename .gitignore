@@ -1,0 +1,8 @@
+.DS_Store
+hw2/hw2.zip
+hw2/hw2/*.csv
+hw2/hw2/*.txt
+~$*.docx
+__pycache__/
+.ipynb_checkpoints/
+*.log
