@@ -1,0 +1,310 @@
+\documentclass[a4paper]{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{epstopdf}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{paralist}
+\usepackage[svgname]{xcolor}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{comment}
+\usepackage{environ}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{caption}
+\usepackage{color}
+\usepackage{xcolor}
+
+
+
+\urlstyle{rm}
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[]
+\newtheorem{conjecture}{Conjecture}[]
+\newtheorem{example}{Example}[]
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\abs}[1]{\lvert#1\rvert}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\br}[1]{\{#1\}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+
+\newcommand{\vc}[1]{\boldsymbol{#1}}
+\newcommand{\xv}{\vc{x}}
+\newcommand{\Sigmav}{\vc{\Sigma}}
+\newcommand{\alphav}{\vc{\alpha}}
+\newcommand{\muv}{\vc{\mu}}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+
+\def\x{\mathbf x}
+\def\y{\mathbf y}
+\def\w{\mathbf w}
+\def\v{\mathbf v}
+\def\E{\mathbb E}
+\def\V{\mathbb V}
+
+% TO SHOW SOLUTIONS, include following (else comment out):
+\newenvironment{soln}{
+    \leavevmode\color{blue}\ignorespaces
+}{}
+
+\newcommand \mle [1]{{\hat #1}^{\rm MLE}}
+
+
+
+\hypersetup{
+%    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\geometry{
+  top=1in,            % <-- you want to adjust this
+  inner=1in,
+  outer=1in,
+  bottom=1in,
+  headheight=3em,       % <-- and this
+  headsep=2em,          % <-- and this
+  footskip=3em,
+}
+
+
+\pagestyle{fancyplain}
+\lhead{\fancyplain{}{Homework 2}}
+\rhead{\fancyplain{}{CS 760 Machine Learning}}
+\cfoot{\thepage}
+
+\title{\textsc{Homework 2}} % Title
+
+%%% NOTE:  Replace 'NAME HERE' etc., and delete any "\red{}" wrappers (so it won't show up as red)
+
+\author{
+\red{$>>$NAME HERE$<<$} \\
+\red{$>>$ID HERE$<<$}\\
+} 
+
+\date{}
+
+\begin{document}
+
+\maketitle 
+
+
+\textbf{Instructions:} 
+
+Use this LaTeX file as a template to develop your homework and submit it as a single PDF file on Gradescope. 
+For the programming component, you can use any programming language, although the teaching stuff will be most able to assist with Python and specifically the package {\tt scikit-learn}; 
+you can use any functionality of the latter.
+Put all code used for the assignment at the end of the document in whatever way is easiest but still legible.
+
+\section{Linear Regression and Regularization}
+Suppose we model the data-generation process as $y=w^Tx+\epsilon$, where inputs $x$ and an unknown parameter $w$ are $d$-dimensional and $\epsilon\sim\mathcal N(0,\sigma^2$) for some $\sigma\ge0$.
+
+\subsection{Conditional probability [5 points]}
+	Write down an expression for $P(y \vert x)$.
+	
+	{\color{blue}
+	Your answer here.
+	}
+	
+\subsection{Conditional log-likelihood [10 points]}
+	Assume you are given a set of training observations $(x^{(i)}, y^{(i)})$ for $i = 1,\ldots,n$.   
+	Derive the conditional log likelihood of this training data.   
+	Drop any constants that do not depend on the parameter $w$.
+	
+	{\color{blue}
+		Your answer here.
+	}
+	
+\subsection{MLE is the least-squares minimizer [5 points]}
+	Based on your answer above, show that finding the MLE of that conditional log likelihood is equivalent to minimizing least squares, $\frac{1}{2}\sum\limits_{i=1}^n (y^{(i)} - w^Tx^{(i)})^2 $.
+	
+	{\color{blue}
+			Your answer here.
+	}
+	
+\subsection{Ridge regression optimization [5 points]}
+	Suppose we add a Ridge penalty to the objective, i.e. $\frac{1}{2}\sum\limits_{i=1}^n (y^{(i)}-w^Tx^{(i)})^2+\frac\lambda2\|w\|_2^2$ for some $\lambda>0$.
+	Although there is a closed form solution to this problem, there are situations in practice where we solve this via gradient descent.
+	Suppose at the $t$th step of gradient descent we are at position $w_t\in\mathbb R^d$, and we are using a fixed learning rate $\eta>0$.
+	Compute the position $w_{t+1}\in\mathbb{R}^d$ at the $(t+1)$st step.
+	
+	{\color{blue}
+			Your answer here.
+	}
+
+\subsection{Effect of the penalty term on optimization [5 points]}
+
+Suppose the data is entirely uninformative, i.e. $x^{(i)}=0_d~\forall~i$, but we still run gradient descent starting from a nonzero initialization. What is the difference in the behavior of gradient descent with and without the Ridge penalty?
+Assume $\lambda\le1/\eta$.
+
+{\color{blue}
+		Your answer here.
+}
+	
+\subsection{Bayesian view of Ridge regression [15 points]}
+	Assume a prior on $w$ that each of its $d$ entries is drawn i.i.d. from $\mathcal N(0,\tau^2)$.
+	Prove that the MAP estimate of $w$ with this prior is equivalent to minimizing the above regularized least squares problem with $\lambda = \frac{\sigma^2}{\tau^2}$.  
+	Hint: recall that the MAP estimate is the one that maximizes the posterior probability, which is itself the product of the likelihood and the prior probability.
+	
+	{\color{blue}
+			Your answer here.
+	}
+
+\newpage
+\section{Logistic regression with different representations}
+
+\subsection{Bag-of-words [5 points]}\label{sec:bow}
+
+The files {\tt imdb\_train.csv} and {\tt imdb\_test.csv} both consist of 25K lines, on each of which there is a label ({\tt pos} or {\tt neg}) followed by a tab and followed by a movie review.
+We will construct Bag-of-words~(BoW) representations as follows:
+\begin{enumerate}
+	\item {\bf Tokenize the documents} by lower-casing it, replacing all punctuation (e.g. all characters in Python's {\tt string.punctuation}) with spaces, and replacing document by lists of tokens by splitting along spaces.
+	\item {\bf Construct a vocabulary} by taking the 10K tokens that appear most often in the training data lists.
+	\item {\bf Represent documents as BoWs} by assigning each token to an index and representing each document in both the training and testing set by a vector $x\in\{0,1\}^{10K}$ s.t. $x_{[j]}=1$ if the document contains the $j$th token and otherwise set $x_{[j]}=0$.
+\end{enumerate}
+
+Represent the training data as the pair $(X_\textrm{train},y_\textrm{ytrain})\in\{0,1\}^{25K\times10K}\times\{0,1\}^{25K}$ consisting of the input data $X_\textrm{train}$ and labels $y_\textrm{train}$, and similarly represent the test data as the pair $(X_\textrm{test},y_\textrm{test})\in\{0,1\}^{25K\times10K}\times\{0,1\}^{25K}$.
+Train (unregularized)~logistic regression on this training data and report the accuracy of the resulting classifier on the test data.
+Hint: if you use {\tt scikit-learn}'s {\tt LogisticRegression}, setting {\tt solver='liblinear'} tends to lead to consistent convergence.
+
+{\color{blue}
+		Your answer here.
+}
+
+\subsection{Standardization [5 points]}\label{sec:standardization}
+
+Often we standardize the features by applying the transformation $(x_{[j]}-\mu_j)/\sigma_j$ to the $j$th entry of each input $x$, where $\mu_j$ and $\sigma_j$ are the empirical mean and standard deviation of the $j$th feature across the training data.
+What is a good reason to avoid doing that here?
+
+{\color{blue}
+		Your answer here.
+}
+
+\subsection{Regularization and cross-validation [5 points]}
+
+We can do better by regularizing the norm of the linear classifier using the penalty $\tfrac1{Cn}\|w\|_2^2$ on the classification weights $w$, where $C$ is an inverse regularization strength and $n=25K$ is the number of training examples.\footnote{We use inverse regularization strength $C$ instead of the usual regularization strength $\lambda$ because that is how {\tt scikit-learn} does it.}
+Train $\ell_2^2$-regularized logistic regression on the training data, with the hyperparameter $C$ selected by 4-fold cross-validation from a set of ten candidates values spaced logarithmically in the interval $[$1E-4,1E4$]$, and report the accuracy of the resulting classifier on the test data.
+Hint: you may use {\tt scikit-learn}'s {\tt LogisticRegressionCV}, which defaults to the above candidate values of $C$.
+
+{\color{blue}
+		Your answer here.
+}
+
+\subsection{Feature selection [5 points]}
+
+Report the value that the linear classifier weight assigns to the tokens ``the'', ``good'', and ``bad'' in both the unregularized and the regularized case.
+What does this say about the effect of regularization?
+
+{\color{blue}
+		Your answer here.
+}
+
+\subsection{Latent Semantic Analysis [5 points]}
+
+The file {\tt imdb\_unsup.txt} contains 50K lines, on each of which there is an unlabeled movie review.
+Tokenize it and construct BoWs from it as in Question~\ref{sec:bow} to get a matrix $X\in\{0,1\}^{50K\times10K}$.
+To use this data, we will treat tokens as samples and whether or not they appear in document $i$ as features, and obtain a 10-dimensional representation of each token $j$ in the vocabulary by taking the first ten singular values $\Sigma_k$ and singular vectors $U_k$ of $X^T$ and multiplying them together.
+This is called Latent Semantic Analysis~(LSA) and is a dimensionality reduction alternative to PCA often used for documents.
+Compute $R^{(\textrm{LSA})}=U_k\Sigma_k\in\mathbb{R}^{10K\times 10}$ and {\bf briefly give one practical reason why PCA might not be appropriate to use here}.
+Hint: {\tt scikit-learn}'s {\tt TruncatedSVD.fit\_transform} will compute the LSA embeddings directly; if using it, setting {\tt algorithm='arpack'} derandomizes the algorithm and yields more consistent results.
+
+{\color{blue}
+	Your answer here.
+}
+
+\subsection{Continuous BoW [5 points]}
+We now have a low-dimensional representation for each token, but to classify documents with logistic regression we need to represent documents instead.
+A simple way to do this is to just represent document $i$ by the sum of the representations $R_{[j]}^{(LSA)}$ of all tokens $j\in[10K]$ that occur in that document.
+This is called a Continuous Bag-of-Words (CBoW) representation.
+Train and test 4-fold cross-validated logistic regression when the input matrices are the LSA-based CBoW alternatives $X_\textrm{train}^{(LSA)},X_\textrm{tst}^{(LSA)}\in\mathbb{R}^{25K\times10}$ (the label vectors $y_\textrm{train},y_\textrm{test}$ remain the same) and report the test accuracy.
+
+{\color{blue}
+	Your answer here.
+}
+
+\subsection{Advantages and disadvantages of dimensionality reduction [5 points]}
+
+Ignoring accuracy, list one advantage and one disadvantage of using these LSA-based CBoW representation.
+
+{\color{blue}
+	Your answer here.
+}
+
+\subsection{Choice of embedding dimension [5 points]}
+
+We specified you use an embedding dimension of 10 for LSA, but list two reasonable ways you could have chosen a suitable dimension using the data.
+Hint: one way uses the supervised training data, and another way uses only the unsupervised data.
+
+{\color{blue}
+	Your answer here.
+}
+
+\subsection{You shall know a word by the company it keeps (Firth, 1957) [5 points]}
+
+The file {\tt glove.csv} contains a token, followed by a tab, followed by a space-delimited list of 300 numbers representing that token.
+This is a subsampled set of GloVe word vectors (\url{https://nlp.stanford.edu/projects/glove/}) trained on 840B tokens of Common Crawl web data;
+these vectors are produced using a different unsupervised model that counts documents as similar if they co-occur within a small span of words of each other.
+Use these GloVe vectors to construct input matrices $X_\textrm{train}^{(GloVe)},X_\textrm{tst}^{(GloVe)}\in\mathbb{R}^{25K\times300}$ consisting of 300-dimensional GloVe-based CBoWs, train and test 4-fold cross-validated logistic regression on them, and report the test accuracy.
+
+{\color{blue}
+	Your answer here.
+}
+
+\subsection{Learning curves [5 points]}\label{sec:curves}
+
+Train 4-fold cross-validated logistic regression on BoW, LSA-based CBoW, and GloVe-based CBoW document representations while varying the amount of training data provided, specifically using the following number of training examples: 8, 40, 200, 1K, 5K, and 25K.
+Make the number of positive and negative samples the same in all datasets and plot the test accuracy vs. number of examples of all three approaches.
+
+{\color{blue}
+	Your answer here.
+}
+
+\subsection{All you need is GloVe [5 points]}
+
+Discuss what methods perform best at different accuracy levels.
+What regimes is unsupervised learning most useful in?
+
+{\color{blue}
+	Your answer here.
+}
+
+\end{document}
