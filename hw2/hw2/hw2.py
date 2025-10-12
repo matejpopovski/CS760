@@ -60,3 +60,4 @@ except Exception:
 y_pred = clf.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 print(f"Test accuracy: {acc:.4f}")
+
