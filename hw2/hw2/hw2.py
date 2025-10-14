@@ -182,3 +182,80 @@ print(f"=== 2.6 (CBOW) ===")
 print(f"Best C: {best_C_cbow:.4g}")
 print(f"Best 4-fold CV accuracy: {best_cv_acc_cbow:.4f}")
 print(f"Test accuracy: {test_acc_cbow:.4f}")
+
+
+# === 2.9: GloVe-based CBoW (300-D) ===========================================
+# Input file format (glove.csv): token<TAB>v1 v2 ... v300  (space-delimited floats)
+
+import numpy as np
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score
+
+GLOVE_PATH = "glove.csv"
+GLOVE_DIM = 300
+
+def load_glove_tab(path: str, dim: int = 300) -> dict[str, np.ndarray]:
+    glove = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            try:
+                tok, vec_str = line.split("\t", 1)
+            except ValueError:
+                continue  # skip malformed lines
+            vec = np.fromstring(vec_str, sep=" ", dtype=np.float32)
+            if vec.size == dim:
+                glove[tok] = vec
+    return glove
+
+print("Loading GloVe...")
+glove = load_glove_tab(GLOVE_PATH, dim=GLOVE_DIM)
+print(f"GloVe entries loaded: {len(glove):,}")
+
+# Build embedding matrix aligned to our 10k-word vocabulary
+V = len(vect.vocabulary_)
+R_glove = np.zeros((V, GLOVE_DIM), dtype=np.float32)  # OOV -> zero vector
+covered = 0
+for tok, j in vect.vocabulary_.items():
+    vec = glove.get(tok)
+    if vec is not None:
+        R_glove[j] = vec
+        covered += 1
+print(f"Vocab covered by GloVe: {covered}/{V} ({covered / V:.1%})")
+
+# Construct 300-D document embeddings by summing token vectors
+X_train_glove = X_train.dot(R_glove)   # (25_000, 300)
+X_test_glove  = X_test.dot(R_glove)    # (25_000, 300)
+print("X_train_glove shape:", X_train_glove.shape)
+print("X_test_glove  shape:", X_test_glove.shape)
+
+# 4-fold CV logistic regression (L2), C in [1e-4, 1e4]
+Cs = np.logspace(-4, 4, 10)
+cv = StratifiedKFold(n_splits=4, shuffle=True, random_state=0)
+
+clf_glove = LogisticRegressionCV(
+    Cs=Cs,
+    cv=cv,
+    penalty="l2",
+    solver="lbfgs",
+    scoring="accuracy",
+    max_iter=1000,
+    n_jobs=-1,
+    refit=True,
+)
+
+clf_glove.fit(X_train_glove, y_train)
+
+best_C_glove = float(clf_glove.C_[0])
+key = 1 if 1 in clf_glove.scores_ else next(iter(clf_glove.scores_))
+cv_means = clf_glove.scores_[key].mean(axis=0)
+best_cv_acc_glove = float(cv_means[np.argmax(cv_means)])
+test_acc_glove = accuracy_score(y_test, clf_glove.predict(X_test_glove))
+
+print("=== 2.9 (GloVe CBOW) ===")
+print(f"Best C: {best_C_glove:.4g}")
+print(f"Best 4-fold CV accuracy: {best_cv_acc_glove:.4f}")
+print(f"Test accuracy: {test_acc_glove:.4f}")
