@@ -259,3 +259,74 @@ print("=== 2.9 (GloVe CBOW) ===")
 print(f"Best C: {best_C_glove:.4g}")
 print(f"Best 4-fold CV accuracy: {best_cv_acc_glove:.4f}")
 print(f"Test accuracy: {test_acc_glove:.4f}")
+
+
+# === 2.10: Learning curves (BoW, LSA-CBOW, GloVe-CBOW) ======================
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score
+
+# sizes requested (balanced: half pos, half neg)
+sizes = [8, 40, 200, 1000, 5000, 25000]
+Cs = np.logspace(-4, 4, 10)
+cv = StratifiedKFold(n_splits=4, shuffle=True, random_state=0)
+
+def balanced_indices(y, n, seed=0):
+    assert n % 2 == 0, "n must be even for balance"
+    rng = np.random.default_rng(seed)
+    pos = np.where(y == 1)[0]; rng.shuffle(pos)
+    neg = np.where(y == 0)[0]; rng.shuffle(neg)
+    n_per = n // 2
+    idx = np.concatenate([pos[:n_per], neg[:n_per]])
+    rng.shuffle(idx)
+    return idx
+
+def cv_lr_test_acc(X_sub, y_sub, X_test_rep, y_test, n_train):
+    # small n: liblinear is stabler; larger n: lbfgs is faster
+    solver = "liblinear" if n_train <= 200 else "lbfgs"
+    clf = LogisticRegressionCV(
+        Cs=Cs, cv=cv, penalty="l2", solver=solver,
+        scoring="accuracy", max_iter=2000, n_jobs=-1, refit=True
+    )
+    clf.fit(X_sub, y_sub)
+    yhat = clf.predict(X_test_rep)
+    return accuracy_score(y_test, yhat), float(clf.C_[0])
+
+results = {"BoW": [], "LSA-CBOW": [], "GloVe-CBOW": []}
+bestCs   = {"BoW": [], "LSA-CBOW": [], "GloVe-CBOW": []}
+
+for n in sizes:
+    idx = balanced_indices(y_train, n, seed=0)
+
+    acc_bow,  C_bow  = cv_lr_test_acc(X_train[idx],       y_train[idx], X_test,       y_test, n)
+    acc_lsa,  C_lsa  = cv_lr_test_acc(X_train_lsa[idx],   y_train[idx], X_test_lsa,   y_test, n)
+    acc_glv,  C_glv  = cv_lr_test_acc(X_train_glove[idx], y_train[idx], X_test_glove, y_test, n)
+
+    results["BoW"].append(acc_bow);        bestCs["BoW"].append(C_bow)
+    results["LSA-CBOW"].append(acc_lsa);   bestCs["LSA-CBOW"].append(C_lsa)
+    results["GloVe-CBOW"].append(acc_glv); bestCs["GloVe-CBOW"].append(C_glv)
+
+# Print a compact table
+print("\n=== 2.10 Learning Curves (test accuracy) ===")
+for name in ["BoW", "LSA-CBOW", "GloVe-CBOW"]:
+    accs = results[name]
+    print(f"{name:10s}:", "  ".join(f"{n:>5d}:{a:.4f}" for n, a in zip(sizes, accs)))
+print("\nBest C per size:")
+for name in ["BoW", "LSA-CBOW", "GloVe-CBOW"]:
+    Cs_str = "  ".join(f"{n:>5d}:{c:.4g}" for n, c in zip(sizes, bestCs[name]))
+    print(f"{name:10s}: {Cs_str}")
+
+# Plot and save
+plt.figure(figsize=(6.2,4.2))
+plt.plot(sizes, results["BoW"],        marker="o", label="BoW (10k)")
+plt.plot(sizes, results["LSA-CBOW"],   marker="o", label="LSA-CBOW (10)")
+plt.plot(sizes, results["GloVe-CBOW"], marker="o", label="GloVe-CBOW (300)")
+plt.xscale("log")
+plt.xticks(sizes, ["8","40","200","1K","5K","25K"])
+plt.xlabel("Training examples (balanced)"); plt.ylabel("Test accuracy")
+plt.title("Learning curves (4-fold CV LR)"); plt.grid(True, which="both", linestyle=":")
+plt.legend(); plt.tight_layout()
+plt.savefig("learning_curves.png", dpi=150)
+print("Saved plot -> learning_curves.png")
