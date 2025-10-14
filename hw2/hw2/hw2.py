@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# CS760 IMDB HW — Sections 2.1 and 2.3 in one file
-
 import string
 import numpy as np
 import pandas as pd
@@ -182,7 +179,6 @@ print(f"=== 2.6 (CBOW) ===")
 print(f"Best C: {best_C_cbow:.4g}")
 print(f"Best 4-fold CV accuracy: {best_cv_acc_cbow:.4f}")
 print(f"Test accuracy: {test_acc_cbow:.4f}")
-
 
 # === 2.9: GloVe-based CBoW (300-D) ===========================================
 # Input file format (glove.csv): token<TAB>v1 v2 ... v300  (space-delimited floats)
