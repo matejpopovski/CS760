@@ -111,3 +111,30 @@ for t in targets:
     w_u  = weight(clf_unreg, vect, t)
     w_l2 = weight(clf_cv,    vect, t)
     print(f"{t:>5}: unreg={w_u:+.6f}   L2={w_l2:+.6f}")
+
+# === 2.5: Latent Semantic Analysis (LSA) ===
+# Goal: tokens as samples; compute R^(LSA) = U_k Σ_k (shape: 10_000 × 10)
+from sklearn.decomposition import TruncatedSVD
+
+# 1) Load unlabeled reviews (50k lines)
+with open("imdb_unsup.txt", "r", encoding="utf-8") as f:
+    unsup_lines = [line.rstrip("\n") for line in f]
+
+# 2) Vectorize with the SAME training vocabulary (do NOT .fit again)
+X_unsup = vect.transform(unsup_lines)            # shape ~ (50_000, 10_000)
+print("X_unsup shape:", X_unsup.shape)
+assert X_unsup.shape[1] == X_train.shape[1], "Vocab size mismatch"
+
+# 3) Tokens as samples => run SVD on X_unsup.T (10_000 × 50_000, sparse)
+svd = TruncatedSVD(n_components=10, algorithm="arpack")  # deterministic
+R_lsa = svd.fit_transform(X_unsup.T)                     # U_k Σ_k
+print("R_lsa shape (tokens × 10):", R_lsa.shape)
+
+# 4) (Optional) peek at a few token embeddings to verify
+for tok in ["the", "good", "bad"]:
+    j = vect.vocabulary_.get(tok)
+    if j is not None:
+        print(f"{tok}: {R_lsa[j, :5]}")  # first 5 dims
+
+# 5) (Optional) save for later use
+# np.save("R_lsa_tokens_10d.npy", R_lsa)
