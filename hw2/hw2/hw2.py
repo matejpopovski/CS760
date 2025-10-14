@@ -137,5 +137,48 @@ for tok in ["the", "good", "bad"]:
     if j is not None:
         print(f"{tok}: {R_lsa[j, :5]}")  # first 5 dims
 
-# 5) (Optional) save for later use
-# np.save("R_lsa_tokens_10d.npy", R_lsa)
+
+# === 2.6: Continuous BoW (CBOW) using LSA token embeddings ===
+# Pre-req: R_lsa (10000 x 10) from 2.5, X_train/X_test from 2.1
+
+import numpy as np
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import StratifiedKFold
+
+print("\n=== 2.6 ===")
+# 1) Build document embeddings by summing token vectors
+X_train_lsa = X_train.dot(R_lsa)   # shape: (25_000, 10)
+X_test_lsa  = X_test.dot(R_lsa)    # shape: (25_000, 10)
+print("X_train_lsa shape:", X_train_lsa.shape)
+print("X_test_lsa  shape:", X_test_lsa.shape)
+
+# 2) 4-fold CV logistic regression (L2), C ∈ [1e-4, 1e4] (10 log-spaced)
+Cs = np.logspace(-4, 4, 10)
+cv_splitter = StratifiedKFold(n_splits=4, shuffle=True, random_state=0)
+
+clf_cbow = LogisticRegressionCV(
+    Cs=Cs,
+    cv=cv_splitter,
+    penalty="l2",
+    solver="lbfgs",
+    scoring="accuracy",
+    max_iter=1000,
+    n_jobs=-1,
+    refit=True
+)
+clf_cbow.fit(X_train_lsa, y_train)
+
+best_C_cbow = float(clf_cbow.C_[0])
+# scores_ key may be 0 or 1; pick whatever exists
+cls_key = 1 if 1 in clf_cbow.scores_ else next(iter(clf_cbow.scores_))
+cv_means_cbow = clf_cbow.scores_[cls_key].mean(axis=0)
+best_cv_acc_cbow = float(cv_means_cbow[np.argmax(cv_means_cbow)])
+
+y_pred_cbow = clf_cbow.predict(X_test_lsa)
+test_acc_cbow = accuracy_score(y_test, y_pred_cbow)
+
+print(f"=== 2.6 (CBOW) ===")
+print(f"Best C: {best_C_cbow:.4g}")
+print(f"Best 4-fold CV accuracy: {best_cv_acc_cbow:.4f}")
+print(f"Test accuracy: {test_acc_cbow:.4f}")
