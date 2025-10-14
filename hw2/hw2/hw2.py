@@ -38,8 +38,13 @@ vect = CountVectorizer(
     max_features=MAX_VOCAB,
     binary=True                     # presence/absence (0/1)
 )
+
+#print("Vect: ", vect)
+
 X_train = vect.fit_transform(train["text"])
+#print("X_train: ", X_train)
 X_test  = vect.transform(test["text"])   # IMPORTANT: transform with SAME vocab
+#print("X_test: ", X_test)
 
 print(f"X_train shape: {X_train.shape} (expected ~25k x 10k)")
 print(f"X_test  shape: {X_test.shape}")
