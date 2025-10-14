@@ -116,6 +116,7 @@ for t in targets:
 # Goal: tokens as samples; compute R^(LSA) = U_k Σ_k (shape: 10_000 × 10)
 from sklearn.decomposition import TruncatedSVD
 
+print("\n=== 2.5 ===")
 # 1) Load unlabeled reviews (50k lines)
 with open("imdb_unsup.txt", "r", encoding="utf-8") as f:
     unsup_lines = [line.rstrip("\n") for line in f]
