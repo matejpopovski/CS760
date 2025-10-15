@@ -138,10 +138,7 @@ for tok in ["the", "good", "bad"]:
 # === 2.6: Continuous BoW (CBOW) using LSA token embeddings ===
 # Pre-req: R_lsa (10000 x 10) from 2.5, X_train/X_test from 2.1
 
-import numpy as np
 from sklearn.linear_model import LogisticRegressionCV
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import StratifiedKFold
 
 print("\n=== 2.6 ===")
 # 1) Build document embeddings by summing token vectors
@@ -182,11 +179,6 @@ print(f"Test accuracy: {test_acc_cbow:.4f}")
 
 # === 2.9: GloVe-based CBoW (300-D) ===========================================
 # Input file format (glove.csv): token<TAB>v1 v2 ... v300  (space-delimited floats)
-
-import numpy as np
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score
 
 GLOVE_PATH = "glove.csv"
 GLOVE_DIM = 300
@@ -258,11 +250,7 @@ print(f"Test accuracy: {test_acc_glove:.4f}")
 
 
 # === 2.10: Learning curves (BoW, LSA-CBOW, GloVe-CBOW) ======================
-import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score
 
 # sizes requested (balanced: half pos, half neg)
 sizes = [8, 40, 200, 1000, 5000, 25000]
