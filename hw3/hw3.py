@@ -207,3 +207,4 @@ test_acc_relu = correct / len(test_loader_relu.dataset) * 100
 print(f"[ReLU] Test accuracy: {test_acc_relu:.2f}%")
 
 print("\n=> ReLU accelerates convergence and yields higher accuracy by avoiding gradient saturation seen with sigmoid activations.")
+
