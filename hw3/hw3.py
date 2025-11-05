@@ -209,3 +209,45 @@ print(f"[ReLU] Test accuracy: {test_acc_relu:.2f}%")
 print("\n=> ReLU accelerates convergence and yields higher accuracy by avoiding gradient saturation seen with sigmoid activations.")
 
 
+
+# ============================================================
+# Exercise 3.6 — Confusion Matrix
+# ============================================================
+print("\n\n=== Exercise 3.6: Confusion Matrix for ReLU Model ===")
+
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import numpy as np
+
+# Ensure evaluation mode
+net_relu.eval()
+
+# Collect all predictions and labels
+all_preds, all_labels = [], []
+with torch.no_grad():
+    for x, y in test_loader_relu:
+        y_hat = net_relu(x)
+        all_preds.append(y_hat.argmax(1).item())
+        all_labels.append(y.item())
+
+# Compute confusion matrix
+cm = confusion_matrix(all_labels, all_preds)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(range(10)))
+
+# Plot the confusion matrix
+fig, ax = plt.subplots(figsize=(8, 8))
+disp.plot(ax=ax, cmap="Blues", values_format="d")
+plt.title("Confusion Matrix — ReLU Model (MNIST)")
+plt.savefig("confusion_matrix_relu.png")
+plt.close(fig)
+print("Confusion matrix saved as confusion_matrix_relu.png")
+
+# Analyze misclassifications
+cm_no_diag = cm.copy()
+np.fill_diagonal(cm_no_diag, 0)
+most_confused_idx = np.unravel_index(cm_no_diag.argmax(), cm_no_diag.shape)
+mislabel_class = most_confused_idx[0]
+confused_as_class = most_confused_idx[1]
+
+print(f"\n(1) Most misclassified true class: {mislabel_class}")
+print(f"(2) Model most often confuses {mislabel_class} → {confused_as_class}")
