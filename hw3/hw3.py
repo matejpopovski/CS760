@@ -1,55 +1,55 @@
+import math
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 
 # -----------------------
-# 1. Data (with normalization)
+# 1. Data
 # -----------------------
-mean, std = 0.1307, 0.3081
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((mean,), (std,))
-])
+# Pixels scaled to [0,1] automatically by ToTensor() (divides by 255)
+transform = transforms.ToTensor()
 
 train = datasets.MNIST('./data', train=True, transform=transform, download=True)
 test  = datasets.MNIST('./data', train=False, transform=transform, download=True)
 
-train_loader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
-test_loader  = torch.utils.data.DataLoader(test, batch_size=64)
+train_loader = torch.utils.data.DataLoader(train, batch_size=1, shuffle=True)
+test_loader  = torch.utils.data.DataLoader(test, batch_size=1)
 
 # -----------------------
 # 2. Model
 # -----------------------
 class TwoLayerNet(nn.Module):
-    def __init__(self, d=784, h=128, k=10, use_relu=False):
+    def __init__(self, d=784, h=128, k=10):
         super().__init__()
         self.fc1 = nn.Linear(d, h)
         self.fc2 = nn.Linear(h, k)
-        self.use_relu = use_relu
         self.sigmoid = nn.Sigmoid()
-        self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
+
+        # Manual weight initialization: uniform in [-1/sqrt(k), 1/sqrt(k)]
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.uniform_(p, -1/math.sqrt(p.size(1)), 1/math.sqrt(p.size(1)))
 
     def forward(self, x):
         x = x.view(-1, 784)
-        h = self.relu(self.fc1(x)) if self.use_relu else self.sigmoid(self.fc1(x))
+        h = self.sigmoid(self.fc1(x))
         out = self.softmax(self.fc2(h))
         return out
 
-# instantiate with use_relu=True to get extra boost
-net = TwoLayerNet(use_relu=True)
+net = TwoLayerNet()
 
 # -----------------------
 # 3. Loss + Optimizer
 # -----------------------
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+optimizer = optim.SGD(net.parameters(), lr=1e-3)
 
 # -----------------------
 # 4. Training
 # -----------------------
-for epoch in range(10):
+for epoch in range(5):  # exactly 5 epochs
     net.train()
     loss_sum, correct = 0.0, 0
     for x, y in train_loader:
@@ -60,8 +60,9 @@ for epoch in range(10):
         optimizer.step()
         loss_sum += loss.item()
         correct += (y_hat.argmax(1) == y).sum().item()
+    avg_loss = loss_sum / len(train_loader)
     acc = correct / len(train_loader.dataset) * 100
-    print(f"Epoch {epoch+1}: loss={loss_sum/len(train_loader):.3f}, acc={acc:.2f}%")
+    print(f"Epoch {epoch+1}: loss={avg_loss:.3f}, acc={acc:.2f}%")
 
 # -----------------------
 # 5. Evaluation
@@ -73,32 +74,40 @@ with torch.no_grad():
         y_hat = net(x)
         correct += (y_hat.argmax(1) == y).sum().item()
 
-print(f"Test accuracy: {correct / len(test_loader.dataset) * 100:.2f}%")
+test_acc = correct / len(test_loader.dataset) * 100
+print(f"Test accuracy: {test_acc:.2f}%")
 
 
+# ============================================================
+# Exercise 3.4 — Effect of Normalization
+# ============================================================
 print("\n\n=== Exercise 3.4: Training with Normalization ===")
 
-# Define normalized transform
+# 1. Mean and standard deviation for MNIST
 mean, std = 0.1307, 0.3081
+print(f"Mean pixel value (μ): {mean}")
+print(f"Standard deviation (σ): {std}")
+
+# 2. Normalized transform
 transform_norm = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((mean,), (std,))
 ])
 
-# Reload dataset with normalization
+# 3. Reload normalized data
 train_norm = datasets.MNIST('./data', train=True, transform=transform_norm, download=True)
 test_norm  = datasets.MNIST('./data', train=False, transform=transform_norm, download=True)
 
-train_loader_norm = torch.utils.data.DataLoader(train_norm, batch_size=64, shuffle=True)
-test_loader_norm  = torch.utils.data.DataLoader(test_norm, batch_size=64)
+train_loader_norm = torch.utils.data.DataLoader(train_norm, batch_size=1, shuffle=True)
+test_loader_norm  = torch.utils.data.DataLoader(test_norm, batch_size=1)
 
-# Reuse your same TwoLayerNet definition
-net_norm = TwoLayerNet(use_relu=True)
+# 4. Reuse same model and hyperparameters
+net_norm = TwoLayerNet()  # same as before (sigmoid, softmax)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net_norm.parameters(), lr=0.01, momentum=0.9)
+optimizer = optim.SGD(net_norm.parameters(), lr=1e-3)
 
-# Train again on normalized data
-for epoch in range(10):
+# 5. Train for 5 epochs
+for epoch in range(5):
     net_norm.train()
     loss_sum, correct = 0.0, 0
     for x, y in train_loader_norm:
@@ -109,10 +118,11 @@ for epoch in range(10):
         optimizer.step()
         loss_sum += loss.item()
         correct += (y_hat.argmax(1) == y).sum().item()
+    avg_loss = loss_sum / len(train_loader_norm)
     acc = correct / len(train_loader_norm.dataset) * 100
-    print(f"[Normalized] Epoch {epoch+1}: loss={loss_sum/len(train_loader_norm):.3f}, acc={acc:.2f}%")
+    print(f"[Normalized] Epoch {epoch+1}: loss={avg_loss:.3f}, acc={acc:.2f}%")
 
-# Evaluate on test set
+# 6. Evaluate on test set
 net_norm.eval()
 correct = 0
 with torch.no_grad():
@@ -121,6 +131,79 @@ with torch.no_grad():
         correct += (y_hat.argmax(1) == y).sum().item()
 
 test_acc_norm = correct / len(test_loader_norm.dataset) * 100
-print(f"[Normalized] Test accuracy: {test_acc_norm:.2f}%\n")
+print(f"[Normalized] Test accuracy: {test_acc_norm:.2f}%")
 
-print("=> Normalization improved performance significantly and stabilized training.")
+print("\n=> Normalization centered and scaled pixel intensities, improving gradient conditioning and stabilizing training convergence.")
+
+
+
+# ============================================================
+# Exercise 3.5 — Activation Functions
+# ============================================================
+print("\n\n=== Exercise 3.5: Training with ReLU Activation ===")
+
+# Reuse same normalization transform as in 3.4
+mean, std = 0.1307, 0.3081
+transform_relu = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((mean,), (std,))
+])
+
+# Load normalized MNIST dataset again
+train_relu = datasets.MNIST('./data', train=True, transform=transform_relu, download=True)
+test_relu  = datasets.MNIST('./data', train=False, transform=transform_relu, download=True)
+
+train_loader_relu = torch.utils.data.DataLoader(train_relu, batch_size=1, shuffle=True)
+test_loader_relu  = torch.utils.data.DataLoader(test_relu, batch_size=1)
+
+# Define new model with ReLU activation
+class TwoLayerNetReLU(nn.Module):
+    def __init__(self, d=784, h=128, k=10):
+        super().__init__()
+        self.fc1 = nn.Linear(d, h)
+        self.fc2 = nn.Linear(h, k)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+        # weight init same as before
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.uniform_(p, -1/math.sqrt(p.size(1)), 1/math.sqrt(p.size(1)))
+
+    def forward(self, x):
+        x = x.view(-1, 784)
+        h = self.relu(self.fc1(x))
+        out = self.softmax(self.fc2(h))
+        return out
+
+# Instantiate and train
+net_relu = TwoLayerNetReLU()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net_relu.parameters(), lr=1e-3)
+
+for epoch in range(5):
+    net_relu.train()
+    loss_sum, correct = 0.0, 0
+    for x, y in train_loader_relu:
+        optimizer.zero_grad()
+        y_hat = net_relu(x)
+        loss = criterion(y_hat, y)
+        loss.backward()
+        optimizer.step()
+        loss_sum += loss.item()
+        correct += (y_hat.argmax(1) == y).sum().item()
+    avg_loss = loss_sum / len(train_loader_relu)
+    acc = correct / len(train_loader_relu.dataset) * 100
+    print(f"[ReLU] Epoch {epoch+1}: loss={avg_loss:.3f}, acc={acc:.2f}%")
+
+# Evaluate on test set
+net_relu.eval()
+correct = 0
+with torch.no_grad():
+    for x, y in test_loader_relu:
+        y_hat = net_relu(x)
+        correct += (y_hat.argmax(1) == y).sum().item()
+
+test_acc_relu = correct / len(test_loader_relu.dataset) * 100
+print(f"[ReLU] Test accuracy: {test_acc_relu:.2f}%")
+
+print("\n=> ReLU accelerates convergence and yields higher accuracy by avoiding gradient saturation seen with sigmoid activations.")
