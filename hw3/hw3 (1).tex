@@ -1,0 +1,311 @@
+\documentclass[a4paper]{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{epstopdf}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{paralist}
+\usepackage[svgname]{xcolor}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{comment}
+\usepackage{environ}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{caption}
+\usepackage{color}
+\usepackage{xcolor}
+
+
+
+\urlstyle{rm}
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[]
+\newtheorem{conjecture}{Conjecture}[]
+\newtheorem{example}{Example}[]
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\abs}[1]{\lvert#1\rvert}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\br}[1]{\{#1\}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+
+\newcommand{\vc}[1]{\boldsymbol{#1}}
+\newcommand{\xv}{\vc{x}}
+\newcommand{\Sigmav}{\vc{\Sigma}}
+\newcommand{\alphav}{\vc{\alpha}}
+\newcommand{\muv}{\vc{\mu}}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+
+\def\x{\mathbf x}
+\def\y{\mathbf y}
+\def\w{\mathbf w}
+\def\v{\mathbf v}
+\def\E{\mathbb E}
+\def\V{\mathbb V}
+
+% TO SHOW SOLUTIONS, include following (else comment out):
+\newenvironment{soln}{
+    \leavevmode\color{blue}\ignorespaces
+}{}
+
+\newcommand \mle [1]{{\hat #1}^{\rm MLE}}
+
+
+
+\hypersetup{
+%    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\geometry{
+  top=1in,            % <-- you want to adjust this
+  inner=1in,
+  outer=1in,
+  bottom=1in,
+  headheight=3em,       % <-- and this
+  headsep=2em,          % <-- and this
+  footskip=3em,
+}
+
+
+\pagestyle{fancyplain}
+\lhead{\fancyplain{}{Homework 2}}
+\rhead{\fancyplain{}{CS 760 Machine Learning}}
+\cfoot{\thepage}
+
+\newcommand{\R}{\mathbb R}
+\usepackage{enumitem}
+\usepackage{bm}
+\def\*#1{\mathbf{#1}}
+
+\title{\textsc{Homework 3}} % Title
+
+%%% NOTE:  Replace 'NAME HERE' etc., and delete any "\red{}" wrappers (so it won't show up as red)
+
+\author{
+\red{$>>$NAME HERE$<<$} \\
+\red{$>>$ID HERE$<<$}\\
+} 
+
+\date{}
+
+\begin{document}
+
+\maketitle 
+
+
+\textbf{Instructions:} 
+
+Use this LaTeX file as a template to develop your homework and submit it as a single PDF file on Gradescope. 
+For the programming component, you can use any programming language, although the teaching staff will be most able to assist with Python and specifically the {\tt sklearn} and {\tt torch} packages; 
+you can use any functionality for Question~\ref{sec:training}.
+Put all code used for the assignment at the end of the document in whatever way is easiest but still legible.
+
+\section{Short proofs}
+
+\subsection{Multi-class prediction with the 0-1 loss}
+
+Suppose the world generates a single observation $x \sim \mbox{multinomial}(\theta)$, where the parameter vector $\theta=(\theta_1, \ldots, \theta_k)$ with $\theta_i\ge 0$ and $\sum_{i=1}^k \theta_i=1$.  Note $x \in \{1, \ldots, k\}$.
+You know $\theta$ and want to predict $x$. 
+Call your prediction $\hat x$.  What is your expected 0-1 loss: 
+$$\E 1_{\hat x \neq x}$$
+using the following two prediction strategies respectively?  Prove your answer.
+
+\subsubsection{Strategy 1 [4 points]}
+$\hat x \in \argmax_x \theta_x$, the outcome with the highest probability.
+
+{\color{blue} Your answer here.}
+
+\subsubsection{Strategy 2 [6 points]}
+
+You mimic the world by generating a prediction $\hat x \sim \mbox{multinomial}(\theta)$.  (Hint: your randomness and the world's randomness are independent)
+
+{\color{blue} Your answer here.}
+
+\subsection{Predicting optimally under a weighted multi-class loss [8 points]}
+
+Like in the previous question, 
+the world generates a single observation $x \sim \mbox{multinomial}(\theta)$.
+Let $c_{ij} \ge 0$ denote the loss you incur, if $x=i$ but you predict $\hat x=j$, for $i,j \in \{1, \ldots, k\}$.
+$c_{ii}=0$ for all $i$.
+This is a way to generalize different costs on false positives vs. false negatives from binary classification to multi-class classification.
+You want to minimize your expected loss:
+$$\E c_{x \hat x}.$$
+Derive the optimal prediction $\hat x$.
+
+{\color{blue} Your answer here.}
+
+\subsection{Brute-forcing $k$-means [7 points]}
+
+Consider the following simple brute-force algorithm for minimizing the $k$-means
+objective: enumerate all the possible partitionings of the $n$ points into $k$
+clusters. For each possible partitioning, compute the optimal centers $c_1,\dots,c_k$ by taking the mean of the points in each cluster and compute the
+corresponding $k$-means objective value. Output the best clustering found. This
+algorithm is guaranteed to output the optimal set of centers.
+For the case $k = 2$, argue that the running time of this brute-force algorithm is exponential in the number of data points $n$.
+	
+{\color{blue} Your answer here.}
+
+\newpage
+\section{Convolutional neural networks}
+
+In this question, you will apply convolutions to the following input:
+
+\begin{tabular}{|c|c|c|c|}
+	\hline
+	3 & 7 & 2 & 5 \\
+	\hline
+	6 & 4 & 9 & 3 \\
+	\hline
+	1 & 8 & 5 & 6 \\
+	\hline
+	9 & 2 & 3 & 1 \\
+	\hline
+\end{tabular}
+
+\subsection{A basic 2D convolution [5 points]}
+
+What is the output when a convolution with the following $2\times 2$ filter is applied to the above input with stride 2, dilation 1, and no padding?
+
+\begin{tabular}{|c|c|}
+	\hline
+	0.1 & 0.5 \\
+	\hline
+	0.2 & 0.3 \\
+	\hline
+\end{tabular}
+
+{\color{blue} Your answer here.}
+
+\subsection{Dilated convolutions [5 points]}\label{sec:dilated}
+
+What is the output when the same filter is applied to the same input but with stride 1, dilation 2, and no padding?
+
+{\color{blue} Your answer here.}
+
+\subsection{Full matrix equivalent [10 points]}
+
+Suppose the input is flattened into a 16 dimensional vector as follows:
+\begin{tabular}{|c|c|c|c|c|c|c|}
+	\hline
+	3 & 7 & 2 & $\cdots$ & 2 & 3 & 1 \\
+	\hline
+\end{tabular}.
+What is the matrix that would need to be multiplied by this vector such that when the product is reshaped~(by unflattening i.e. applying the inverse of the just-described flattening operation) into a $2\times2$ matrix, the output will be same as that of the dilated convolution from Question~\ref{sec:dilated}?
+
+{\color{blue} Your answer here.}
+
+\subsection{Convolution as regularization [5 points]}
+
+Following the previous question, explain how a convolutional layer can be viewed as a regularization of a regular feed-forward layer.
+
+{\color{blue} Your answer here.}
+
+\newpage
+\section{Neural network training}\label{sec:training}
+
+Consider a two-layer feed-forward network with $h$ hidden units that takes $d$-dimensional inputs $\*x\in\R^d$ and outputs $\*{\hat y}=\textrm{softmax}(\*W_2\sigma(\*W_1\*x))$,
+where $\*W_1\in\R^{h\times d}$ and $\*W_2\in\R^{k\times h}$ are weights and $\sigma:\R^h\mapsto[0,1]^h$ is the sigmoid activation function.
+Suppose we want to train this network to minimize the negative log-likelihood objective $L(\*{\hat y},\*y)=-\*y^\top\log f(\*x)$ given one-hot-encoded labels $\*y\in\{0,1\}^k$.
+
+\subsection{Gradient expressions [10 points]}
+Derive the gradient of $L(\*{\hat y},\*y)$ w.r.t. $\*W_1$ and $\*W_2$, in terms of $\*W_1,\*W_2,\*x,\*y$, and $\*{\hat y}$.
+You may use the following facts about matrix-vector derivatives without proof:
+\begin{enumerate}
+	\item $\frac{\partial L(\textrm{softmax}(\*z),\*y)}{\partial\*z}=\textrm{softmax}(\*z)-\*y$
+	\item if $f:\R^m\mapsto\R$ and $\*u=\*W\*v$ for $\*W\in\R^{m\times n}$ and $\*v\in\R^n$ then $\frac{\partial f}{\partial\*v}=\*W^\top\frac{\partial f}{\partial\*u}$ and $\frac{\partial f}{\partial \*W}=\frac{\partial f}{\partial\*u}\*v^\top$
+	\item if $f=g(\*u)$ and $\*u=\sigma(\*v)$ then $\frac{\partial f}{\partial\*v}=\frac{\partial f}{\partial\*u}\odot\sigma'(\*v)=\frac{\partial f}{\partial\*u}\odot\sigma(\*v)\odot(\*1-\sigma(\*v))$
+\end{enumerate}
+
+{\color{blue} Your answer here.}
+
+\subsection{Backpropagation algorithm [10 points]}
+Write down the quantities that need to be stored in the forward pass and the step-by-step (one matrix or vector operation per step) algorithm for computing the two gradients in the backward pass.
+
+{\color{blue} Your answer here.}
+
+\subsection{MNIST classifier [10 points]}\label{sec:mnist}
+
+Train and test the above model with $h=128$ on flattened MNIST images using SGD with learning rate 1E-3 and batch size 1.
+The data consists of 60K training and 10K test points of labeled images of the numbers 0-9, with pixel values normalized to be between 0 and 1 by dividing by 255 if needed.
+It is easiest to obtain this data via 
+\begin{enumerate}
+	\item {\tt from torchvision import datasets, transforms}
+	\item {\tt tt = transforms.ToTensor()}
+	\item {\tt train = datasets.MNIST('./data', train=True, transform=tt, download=True)}
+	\item {\tt test = datasets.MNIST('./data', train=False, transform=tt, download=True)}
+\end{enumerate}
+Initialize the weights at each layer by setting the entries by sampling i.i.d. from the uniform distribution on $[\pm\tfrac1{\sqrt k}]$, where $k$ is the input dimension of that layer.
+Train for five epochs and report (1)~the average loss observed across each epoch, (2)~the average training accuracy observed across each epoch, and (3)~the test accuracy after training.
+
+{\color{blue} Your answer here.}
+
+\subsection{Normalization [5 points]}
+
+Normalize the data by subtracting the mean pixel value and dividing by the standard deviation of the pixel values.
+Report (1)~the mean, (2)~the standard deviation, and (3)~everything reported from Question~\ref{sec:mnist}.
+Briefly comment on the effect of doing normalization.
+
+{\color{blue} Your answer here.}
+
+\subsection{Activation functions [5 points]}\label{sec:activation}
+
+Replace the sigmoid activation by a ReLU and report everything reported in Question~\ref{sec:mnist}.
+Briefly comment on the effect of doing switching to a different activation function.
+
+{\color{blue} Your answer here.}
+
+\subsection{Confusion matrix [5 points]}\label{sec:confusion}
+
+Plot the confusion matrix of the model trained in Question~\ref{sec:activation}, making sure to label the individual matrix entries, and report (1)~the most mislabeled ground truth class and (2)~the class pair causing the most model confusion and which class is being confused for which other one in that case.
+
+{\color{blue} Your answer here.}
+	
+\subsection{Data augmentation [5 points]}
+
+Would it be reasonable to do data augmentation via flipping the input image along the vertical axis or rotating the image 180 degrees?
+Explain why or why not.
+
+{\color{blue} Your answer here.}
+
+
+\end{document}
